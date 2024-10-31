@@ -1,3 +1,21 @@
+# Rareskills Week 01 Assignment
+
+## ERC777
+
+### Observations
+
+- `ERC777` is not part of OZ codebase starting `v5.x`
+- if `account` is a contract, it must implement the {IERC777Recipient} interface.
+  - if using `send` or `operatorSend` and `transferFrom` don't require it
+  - backward compatibility since `transfer`
+
+### Questions
+
+- Update existing ERC20 with ERC777, is that possible?
+- vs code complains about my inheritdoc natspec comment
+
+### Open Challenges
+
 ## Foundry with Soldeer Template
 
 ```shell
@@ -12,74 +30,4 @@ forge test
 forge soldeer uninstall DEPENDENCY
 # install dependencies
 forge soldeer install @openzeppelin-contracts~5.0.2
-```
-
-https://book.getfoundry.sh/projects/soldeer
-
-Check: https://soldeer.xyz/
-Github: https://github.com/mario-eth/soldeer
-
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
 ```
