@@ -8,6 +8,8 @@
 - if `account` is a contract, it must implement the {IERC777Recipient} interface.
   - if using `send` or `operatorSend` and `transferFrom` don't require it
   - backward compatibility since `transfer`
+- deploying ERC777 in a testnet env requires ERC1820 also being deployed
+  - best is to `vm.fork`
 
 ### Questions
 

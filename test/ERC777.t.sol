@@ -14,19 +14,26 @@ contract ERC777Test is Test {
     address user3 = address(103);
 
     MyERC777 public myToken;
-    ERC777 public myToken2;
     CompatibleSmartAccount public compatibleAccount;
     IncompatibleSmartAccount public incompatibleAccount;
     // not sure if I'm going to use this
-    IERC1820Registry internal constant _ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
+    IERC1820Registry internal constant ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
 
     function setUp() public {
+        string memory mainnetRPCUrl = vm.envString("MAINNET_RPC_URL");
+
+        // Fork mainnet
+        vm.createSelectFork(mainnetRPCUrl);
+
+        // Verify ERC1820Registry exists at the expected address
+        require(address(ERC1820_REGISTRY).code.length > 0, "ERC1820Registry not found");
+
         // owner
         vm.startPrank(owner);
-        address[] memory defaultOperators = new address[](0);
+        // address 99 is owner of a smart account and the erc777
         compatibleAccount = new CompatibleSmartAccount();
-        myToken2 = new ERC777("MyTokenName", "MTN", defaultOperators);
-        // myToken = new MyERC777("MyTokenName", "MTN", defaultOperators);
+        address[] memory defaultOperators = new address[](0);
+        myToken = new MyERC777("MyTokenName", "MTN", defaultOperators);
         vm.stopPrank();
         // someone else
         vm.prank(user1);
