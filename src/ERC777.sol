@@ -16,10 +16,13 @@ contract MyERC777 is ERC777, Ownable2Step {
     /// @notice Mint new tokens to the owner
     /// @dev make sure the owner is a contract satisfying the IERC777Recipient interface
     /// @dev See {IERC777-mint}.
-    function mint(uint256 amount_, bytes memory userData, bytes memory operatorData, bool requireReceptionAck)
-        external
-        onlyOwner
-    {
-        _mint(owner(), amount_, userData, operatorData, requireReceptionAck);
+    function mint(
+        address beneficiary,
+        uint256 amount_,
+        bytes memory userData,
+        bytes memory operatorData,
+        bool requireReceptionAck
+    ) external onlyOwner {
+        _mint(beneficiary, amount_, userData, operatorData, requireReceptionAck);
     }
 }
