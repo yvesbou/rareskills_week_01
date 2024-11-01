@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {Test, console} from "forge-std-1.9.2/src/Test.sol";
-import {CompatibleSmartAccount, IncompatibleSmartAccount} from "../src/Accounts.sol";
+import {CompatibleSmartAccount, IncompatibleSmartAccount, CompatibleSmartAccountWithHooks} from "../src/Accounts.sol";
 import {MyERC777} from "../src/ERC777.sol";
 import {IERC1820Registry} from "@openzeppelin/contracts@4.9.0/utils/introspection/IERC1820Registry.sol";
 import {ERC777} from "@openzeppelin/contracts@4.9.0/token/ERC777/ERC777.sol";
@@ -19,6 +19,7 @@ contract ERC777Test is Test {
     // Smart Accounts
     CompatibleSmartAccount public compatibleAccount;
     IncompatibleSmartAccount public incompatibleAccount;
+    CompatibleSmartAccountWithHooks public compatibleAccountWithHooks;
 
     // ERC1820
     IERC1820Registry internal constant ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
@@ -46,8 +47,12 @@ contract ERC777Test is Test {
         vm.prank(user1);
         incompatibleAccount = new IncompatibleSmartAccount();
 
+        vm.prank(user2);
+        // make user3 recipient of donations
+        compatibleAccountWithHooks = new CompatibleSmartAccountWithHooks(user3, address(myToken));
         // erc1820 related
         registerOwnRecipient(address(compatibleAccount));
+        registerOwnRecipient(address(compatibleAccountWithHooks));
     }
 
     function test_mint() public {
@@ -91,6 +96,25 @@ contract ERC777Test is Test {
         assertEq(compatibleAccountBalance, amountForBeneficiary);
     }
 
+    function test_sendToCorrectImplementorWithHook() public {
+        uint256 amountToBeMinted = 100 * 1e18;
+        mintForOwner(amountToBeMinted);
+
+        uint256 amountForBeneficiary = 1e18;
+        address addrBeneficiary = address(compatibleAccountWithHooks);
+        bytes memory data = "";
+        vm.prank(owner);
+        myToken.send(addrBeneficiary, amountForBeneficiary, data);
+
+        uint256 compatibleAccountBalance = myToken.balanceOf(addrBeneficiary);
+        uint256 balanceDonationReceiver = myToken.balanceOf(user3); // receiver of donation
+
+        uint256 remainingAfterDonation = 99 * amountForBeneficiary / 100;
+        uint256 amountForDonationReceiver = amountForBeneficiary - remainingAfterDonation;
+        assertEq(compatibleAccountBalance, remainingAfterDonation);
+        assertEq(balanceDonationReceiver, amountForDonationReceiver);
+    }
+
     function test_tryToSendToCorrectImplementorNot1820Registered() public {
         vm.prank(user3);
         CompatibleSmartAccount compatibleAccountNotRegisted = new CompatibleSmartAccount();
@@ -101,16 +125,29 @@ contract ERC777Test is Test {
         uint256 amountForBeneficiary = 1e18;
         address addrBeneficiary = address(compatibleAccountNotRegisted);
         bytes memory data = "";
-        vm.prank(owner); // owner trying to send to not registered compatible account
+        vm.prank(owner); // owner trying to send to *un*registered compatible account
         vm.expectRevert("ERC777: token recipient contract has no implementer for ERC777TokensRecipient");
         myToken.send(addrBeneficiary, amountForBeneficiary, data);
     }
 
+    // it is possible to mint to incompatible, if the mint function is set up this way
+    function test_mintToIncompatible() public {
+        bytes memory userData = "";
+        bytes memory operatorData = "";
+        address addrIncompatible = address(incompatibleAccount);
+        uint256 amount = 2e18;
+        vm.prank(owner);
+        myToken.mint(addrIncompatible, amount, userData, operatorData, false);
+    }
+
     /**
      * todo
-     * - test operator
-     * - test erc20
-     * - test minting
+     *  - mint to incompatible
+     *  - test some callbacks
+     *  - test operator
+     *  - transferFrom & operatorSend
+     *  - approve & allowance
+     *  - test malicious re-entrancy
      */
 
     /*════════════════════════════════════════════════════════════*\
@@ -120,11 +157,12 @@ contract ERC777Test is Test {
     \*════════════════════════════════════════════════════════════*/
     function mintForOwner(uint256 amount) public {
         bytes memory userData = "";
-        bytes memory oepratorData = "";
+        bytes memory operatorData = "";
         vm.prank(owner);
-        myToken.mint(owner, amount, userData, oepratorData, false);
+        myToken.mint(owner, amount, userData, operatorData, false);
     }
 
+    // assume smart accounts can call this function themselves (ie prank)
     function registerOwnRecipient(address user) public {
         vm.prank(user);
         ERC1820_REGISTRY.setInterfaceImplementer(user, TOKENS_RECIPIENT_INTERFACE_HASH, user);

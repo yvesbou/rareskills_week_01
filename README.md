@@ -10,6 +10,7 @@
   - backward compatibility since `transfer`
 - deploying ERC777 in a testnet env requires ERC1820 also being deployed
   - best is to `vm.fork`
+- owner of `ERC777` can decide to circumvent receiving hook for minting
 
 ### Questions
 
