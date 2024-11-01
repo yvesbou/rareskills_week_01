@@ -32,7 +32,14 @@ contract CompatibleSmartAccount is IERC777Recipient, IERC777Sender {
         uint256 amount,
         bytes calldata userData,
         bytes calldata operatorData
-    ) external {}
+    ) external {
+        /**
+         * potential ideas
+         *      - only whitelisted addresses
+         *      - pay tax
+         *      - save to another account
+         */
+    }
 }
 
 contract CompatibleSmartAccountWithHooks is IERC777Recipient, IERC777Sender {

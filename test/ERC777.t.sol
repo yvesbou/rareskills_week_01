@@ -140,15 +140,35 @@ contract ERC777Test is Test {
         myToken.mint(addrIncompatible, amount, userData, operatorData, false);
     }
 
-    /**
-     * todo
-     *  - mint to incompatible
-     *  - test some callbacks
-     *  - test operator
-     *  - transferFrom & operatorSend
-     *  - approve & allowance
-     *  - test malicious re-entrancy
-     */
+    function test_operatorWithEOA() public {
+        uint256 amount = 1000e18;
+
+        mintForUser(user2, amount);
+        // authorize operator
+        vm.prank(user2);
+        myToken.authorizeOperator(user3);
+
+        // operator sends somewhere
+        bytes memory data = "";
+        bytes memory operatorData = "";
+        uint256 halfAmount = amount / 2;
+        vm.prank(user3, user3); // user3 is the operator and thus needs to be msg.sender
+        myToken.operatorSend(user2, user3, halfAmount, data, operatorData);
+        // 50% with transferFrom and 50% with operatorSend
+
+        // operator and allowance concepts are orthogonal: operators cannot
+        // call `transferFrom` (unless they have allowance)
+        vm.prank(user3, user3); // being operator not equal to allowance
+        vm.expectRevert("ERC777: insufficient allowance");
+        myToken.transferFrom(user2, user3, halfAmount);
+
+        // try operatorBurn
+        vm.prank(user3, user3); // user3 is the operator and thus needs to be msg.sender
+        myToken.operatorBurn(user2, halfAmount, data, operatorData);
+
+        uint256 endBalance = myToken.balanceOf(user2);
+        assertEq(endBalance, 0);
+    }
 
     /*════════════════════════════════════════════════════════════*\
     ║                                                            ║
@@ -160,6 +180,13 @@ contract ERC777Test is Test {
         bytes memory operatorData = "";
         vm.prank(owner);
         myToken.mint(owner, amount, userData, operatorData, false);
+    }
+
+    function mintForUser(address user, uint256 amount) public {
+        bytes memory userData = "";
+        bytes memory operatorData = "";
+        vm.prank(owner);
+        myToken.mint(user, amount, userData, operatorData, false);
     }
 
     // assume smart accounts can call this function themselves (ie prank)
