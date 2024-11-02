@@ -8,7 +8,7 @@ import {Ownable2Step} from "@openzeppelin/contracts@4.9.0/access/Ownable2Step.so
 /// @author Yves
 /// @notice Owner allowed to mint, no further customisation
 /// @dev no further detail
-contract MyERC777 is ERC777, Ownable2Step {
+contract SimpleERC777 is ERC777, Ownable2Step {
     constructor(string memory name_, string memory symbol_, address[] memory defaultOperators_)
         ERC777(name_, symbol_, defaultOperators_)
     {}

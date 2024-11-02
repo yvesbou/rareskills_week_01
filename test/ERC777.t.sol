@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {Test, console} from "forge-std-1.9.2/src/Test.sol";
 import {CompatibleSmartAccount, IncompatibleSmartAccount, CompatibleSmartAccountWithHooks} from "../src/Accounts.sol";
-import {MyERC777} from "../src/ERC777.sol";
+import {SimpleERC777} from "../src/SimpleERC777.sol";
 import {IERC1820Registry} from "@openzeppelin/contracts@4.9.0/utils/introspection/IERC1820Registry.sol";
 import {ERC777} from "@openzeppelin/contracts@4.9.0/token/ERC777/ERC777.sol";
 
@@ -14,7 +14,7 @@ contract ERC777Test is Test {
     address user2 = address(102);
     address user3 = address(103);
 
-    MyERC777 public myToken;
+    SimpleERC777 public myToken;
 
     // Smart Accounts
     CompatibleSmartAccount public compatibleAccount;
@@ -41,7 +41,7 @@ contract ERC777Test is Test {
         // address 99 is owner of a smart account and the erc777
         compatibleAccount = new CompatibleSmartAccount();
         address[] memory defaultOperators = new address[](0);
-        myToken = new MyERC777("MyTokenName", "MTN", defaultOperators);
+        myToken = new SimpleERC777("MyTokenName", "MTN", defaultOperators);
         vm.stopPrank();
         // someone else
         vm.prank(user1);
