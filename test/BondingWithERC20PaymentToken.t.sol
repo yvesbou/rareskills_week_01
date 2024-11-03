@@ -89,9 +89,9 @@ contract ERC777Test is Test {
         vm.stopPrank();
     }
 
-    /// @notice Fuzzing of the same test case
+    /// @notice Fuzzing of the same test case as above
     function test_bonding(uint256 x) public {
-        vm.assume(x < 141e16);
+        vm.assume(x < 141e16); // user1 has only 100 payment tokens, so √2*100 is max price
         vm.startPrank(user1);
         // owns 100 payment tokens
         paymentTokenERC20.approve(address(bondingToken), 100e18); // allowance needed
