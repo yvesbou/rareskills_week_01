@@ -12,6 +12,8 @@ import {IERC777Sender} from "@openzeppelin/contracts@4.9.0/token/ERC777/IERC777S
 /// or user can use the function deposit which is exposed by this contract.
 contract ERC777Bank is IERC777Recipient, IERC777Sender {
     IERC777 public savingsToken;
+    address[] public holders; // allows exploiter to look up other bank accounts
+    uint256 public numClients;
     mapping(address accountHolder => uint256 amount) accountBalances;
 
     // events
@@ -22,7 +24,7 @@ contract ERC777Bank is IERC777Recipient, IERC777Sender {
     error NotLiquidEnough(uint256 price);
     error TransferringPaymentTokenFailed();
 
-    constructor(string memory name_, string memory symbol_, address[] memory defaultOperators_, address savingsToken_) {
+    constructor(address savingsToken_) {
         savingsToken = IERC777(savingsToken_);
     }
 
@@ -64,7 +66,7 @@ contract ERC777Bank is IERC777Recipient, IERC777Sender {
         // send erc777 tokens to user
         savingsToken.send(recipient, amount, data);
         // change internal balance (accountBalances)
-        accountBalances[msg.sender] -= amount;
+        accountBalances[recipient] -= amount; // no vulnerability if msg.sender
     }
 
     function tokensToSend(
@@ -85,6 +87,7 @@ contract ERC777Bank is IERC777Recipient, IERC777Sender {
     function _deposit(address from, uint256 amount) internal {
         // increase internal balance
         accountBalances[from] += amount;
+        holders.push(from);
         // emit event
         emit Deposited(from, amount);
     }
