@@ -61,6 +61,12 @@ contract CompatibleSmartAccountWithHooks is IERC777Recipient, IERC777Sender {
         bytes calldata userData,
         bytes calldata operatorData
     ) external {
+        // un-used
+        operator;
+        from;
+        to;
+        userData;
+        operatorData;
         // neglect if the recipient implements erc777recipient
         // donate 1% of every receiving amount, to immutable beneficiary
         if (amount > 100) {

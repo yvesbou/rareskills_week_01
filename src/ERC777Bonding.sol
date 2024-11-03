@@ -17,7 +17,7 @@ contract ERC777Bonding is ERC777, Ownable2Step {
     event Sold(address indexed seller, uint256 indexed received, uint256 indexed supply);
 
     // errors
-    error NotLiquidEnough();
+    error NotLiquidEnough(uint256 price);
     error TransferringPaymentTokenFailed();
 
     constructor(string memory name_, string memory symbol_, address[] memory defaultOperators_, address paymentToken_)
@@ -38,7 +38,7 @@ contract ERC777Bonding is ERC777, Ownable2Step {
         if (price > availableCustomerTokens) {
             // custom error
             // is this really needed to check twice
-            revert NotLiquidEnough();
+            revert NotLiquidEnough(price);
         }
         bool success = paymentToken.transferFrom(msg.sender, address(this), price);
         if (!success) {
@@ -57,7 +57,7 @@ contract ERC777Bonding is ERC777, Ownable2Step {
     /// @param amount specifying the amount that the user wants to buy
     function sell(uint256 amount) external {
         // convert
-        uint256 price = convert(amount, true);
+        uint256 price = convert(amount, false);
 
         _burn(msg.sender, amount, "", ""); // can user re-enter with beforeTokenTransfer?
 
@@ -76,14 +76,15 @@ contract ERC777Bonding is ERC777, Ownable2Step {
     /// @param isGrowing whether the user buys(true)/sells(false) from the contract
     /// @return Documents the return variables of a contract’s function state variable
     function convert(uint256 amount, bool isGrowing) internal view returns (uint256) {
+        uint256 precision = decimals();
         uint256 cachedTotalSupply = totalSupply();
         uint256 cachedPrice = cachedTotalSupply; // not reading from storage again
         uint256 newAmount = isGrowing ? cachedTotalSupply + amount : cachedTotalSupply - amount;
         uint256 newPrice = newAmount; // x = y
         if (isGrowing) {
-            return (newPrice * newAmount - cachedPrice * cachedTotalSupply) / 2;
+            return (newPrice * newAmount - cachedPrice * cachedTotalSupply) / (2 * 10 ** precision);
         } else {
-            return (cachedPrice * cachedTotalSupply - newPrice * newAmount) / 2;
+            return (cachedPrice * cachedTotalSupply - newPrice * newAmount) / (2 * 10 ** precision);
         }
     }
 }

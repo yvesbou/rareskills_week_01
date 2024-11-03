@@ -43,7 +43,6 @@ contract ERC777Test is Test {
         benefeciaries[0] = user1;
         benefeciaries[1] = user2;
         benefeciaries[2] = user3;
-        benefeciaries[3] = owner;
 
         paymentTokenERC20 = new PaymentTokenERC20(benefeciaries);
 
@@ -66,12 +65,54 @@ contract ERC777Test is Test {
         registerOwnRecipient(address(compatibleAccountWithHooks));
     }
 
-    function test_buyBonding() public {
+    /// @notice Tests balances of a user that buys 10 and then sells 2 bonding tokens
+    function test_bonding() public {
         vm.startPrank(user1); // owns 100 payment tokens
         paymentTokenERC20.approve(address(bondingToken), 100e18); // allowance needed
         bondingToken.buy(10e18); // buy 10 tokens, pay 50
-            // check if the user has 50 payment tokens
-            // check if the user has received 10 bonding token
+
+        uint256 newBalance = paymentTokenERC20.balanceOf(user1);
+        // check if the user has 50 payment tokens
+        assertEq(newBalance, 50e18);
+
+        uint256 receivedTokens = bondingToken.balanceOf(user1);
+        // check if the user has received 10 bonding token
+        assertEq(receivedTokens, 10e18);
+
+        bondingToken.sell(2e18);
+        uint256 latestBondingTokenBalance = bondingToken.balanceOf(user1);
+        assertEq(latestBondingTokenBalance, 8e18);
+
+        uint256 latestBalance = paymentTokenERC20.balanceOf(user1);
+        // check if the user has 68 payment tokens
+        assertEq(latestBalance, 68e18);
+        vm.stopPrank();
+    }
+
+    /// @notice Fuzzing of the same test case
+    function test_bonding(uint256 x) public {
+        vm.assume(x < 141e16);
+        vm.startPrank(user1);
+        // owns 100 payment tokens
+        paymentTokenERC20.approve(address(bondingToken), 100e18); // allowance needed
+        bondingToken.buy(10e18); // buy 10 tokens, pay 50
+
+        uint256 newBalance = paymentTokenERC20.balanceOf(user1);
+        // check if the user has 50 payment tokens
+        assertEq(newBalance, 50e18);
+
+        uint256 receivedTokens = bondingToken.balanceOf(user1);
+        // check if the user has received 10 bonding token
+        assertEq(receivedTokens, 10e18);
+
+        bondingToken.sell(2e18);
+        uint256 latestBondingTokenBalance = bondingToken.balanceOf(user1);
+        assertEq(latestBondingTokenBalance, 8e18);
+
+        uint256 latestBalance = paymentTokenERC20.balanceOf(user1);
+        // check if the user has 68 payment tokens
+        assertEq(latestBalance, 68e18);
+        vm.stopPrank();
     }
 
     /*════════════════════════════════════════════════════════════*\
