@@ -8,6 +8,8 @@ import {IERC777Sender} from "@openzeppelin/contracts@4.9.0/token/ERC777/IERC777S
 /// @title An ERC777 Bank that demonstrates ERC777 re-entrancy vulnerability
 /// @author Yves
 /// @notice Savings Token is an ERC777 contract
+/// @notice user can send ERC777 directly to this contract (uses IERC777Recipient)
+/// or user can use the function deposit which is exposed by this contract.
 contract ERC777Bank is IERC777Recipient, IERC777Sender {
     IERC777 public savingsToken;
     mapping(address accountHolder => uint256 amount) accountBalances;
@@ -25,22 +27,65 @@ contract ERC777Bank is IERC777Recipient, IERC777Sender {
     }
 
     /// @notice User can deposit ERC777 into this bank in his/her account
-    /// @notice user can send ERC777 directly to this contract (uses IERC777Recipient)
     /// @notice user can give Bank operator rights can then call this function
     /// @dev uses `ERC777.operatorSend`
     /// @dev requires ERC777.isOperatorFor(address(this), msg.sender) to be true
     /// @param amount specifying the amount that the user wants to deposit
     function deposit(uint256 amount) external {
-        //
+        bytes memory data = "";
+        bytes memory operatorData = "";
+        // this will trigger tokensReceived as well
+        savingsToken.operatorSend(msg.sender, address(this), amount, data, operatorData);
     }
 
-    /// @notice Sells Tokens back to the contract via a bonding curve
-    /// @notice Requires the user to approve first (payment token is ERC20)
-    /// @dev bonding curve x = y
-    /// @param amount specifying the amount that the user wants to buy
-    function withdraw(uint256 amount) external {
-        // send erc777 tokens to user
+    /// @notice Required for IERC777-Recipient
+    /// @inheritdoc	IERC777Recipient
+    function tokensReceived(
+        address operator,
+        address from,
+        address to,
+        uint256 amount,
+        bytes calldata userData,
+        bytes calldata operatorData
+    ) external {
+        // do I need sanity checks?
+        // checks for userData?
+        // how does it react on other erc777 tokens?
+        // if a revert is included receiving the token is disabled
+        // but with mint?
+        _deposit(from, amount);
+    }
 
+    /// @notice Allows users to get back their deposit
+    /// @dev token transfer before state change to introduce re-entrancy
+    /// @param amount specifying the amount that the user wants to withdraw
+    function withdraw(address recipient, uint256 amount) external {
+        bytes memory data = "";
+        // send erc777 tokens to user
+        savingsToken.send(recipient, amount, data);
         // change internal balance (accountBalances)
+        accountBalances[msg.sender] -= amount;
+    }
+
+    function tokensToSend(
+        address operator,
+        address from,
+        address to,
+        uint256 amount,
+        bytes calldata userData,
+        bytes calldata operatorData
+    ) external {
+        // would be safer if the accountBalances update was here before token transfer
+    }
+
+    /// @notice Explain to an end user what this does
+    /// @dev Explain to a developer any extra details
+    /// @param from the owner of the deposit
+    /// @param amount the amount of the deposit
+    function _deposit(address from, uint256 amount) internal {
+        // increase internal balance
+        accountBalances[from] += amount;
+        // emit event
+        emit Deposited(from, amount);
     }
 }

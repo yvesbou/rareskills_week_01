@@ -14,10 +14,16 @@
 
 ### Questions
 
+- Do operator face any restrictions on how to use the tokens?
 - Update existing ERC20 with ERC777, is that possible?
+  - yes, ERC777 is backwards compatible
 - vs code complains about my inheritdoc natspec comment
 
 ### Open Challenges
+
+## ERC-1363
+
+### Observations
 
 ## Foundry with Soldeer Template
 
