@@ -79,6 +79,8 @@ contract ERC777ReentrancyTest is Test {
         // erc1820 related
         // since evil is the manager of exploiter (done in its constructor) evil can set interface
         vm.prank(evil);
+        // requires: canImplementInterfaceForAddress to return keccak256(abi.encodePacked("ERC1820_ACCEPT_MAGIC"))
+        // for this hash and address
         ERC1820_REGISTRY.setInterfaceImplementer(
             address(exploiter), TOKENS_RECIPIENT_INTERFACE_HASH, address(exploiter)
         );
