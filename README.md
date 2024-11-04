@@ -4,6 +4,7 @@
 
 ### Observations
 
+- If multiple tokens have the same interface hash `"ERC777TokensRecipient"` a malicious user can set the interface
 - `ERC777` is not part of OZ codebase starting `v5.x`
 - if `account` is a contract, it must implement the {IERC777Recipient} interface.
   - if using `send` or `operatorSend` and `transferFrom` don't require it

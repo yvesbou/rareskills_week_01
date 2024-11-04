@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {IERC777} from "@openzeppelin/contracts@4.9.0/token/ERC777/IERC777.sol";
 import {IERC777Recipient} from "@openzeppelin/contracts@4.9.0/token/ERC777/IERC777Recipient.sol";
 import {IERC777Sender} from "@openzeppelin/contracts@4.9.0/token/ERC777/IERC777Sender.sol";
+import {IERC1820Registry} from "@openzeppelin/contracts@4.9.0/utils/introspection/IERC1820Registry.sol";
 
 /// @title An ERC777 Bank that demonstrates ERC777 re-entrancy vulnerability
 /// @author Yves
@@ -11,20 +12,26 @@ import {IERC777Sender} from "@openzeppelin/contracts@4.9.0/token/ERC777/IERC777S
 /// @notice user can send ERC777 directly to this contract (uses IERC777Recipient)
 /// or user can use the function deposit which is exposed by this contract.
 contract ERC777Bank is IERC777Recipient, IERC777Sender {
+    IERC1820Registry internal constant ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
+
     IERC777 public savingsToken;
-    address[] public holders; // allows exploiter to look up other bank accounts
-    uint256 public numClients;
-    mapping(address accountHolder => uint256 amount) accountBalances;
+
+    mapping(address accountHolder => uint256 amount) public accountBalances;
 
     // events
     event Deposited(address indexed saver, uint256 indexed amount);
     event Withdrawn(address indexed saver, uint256 indexed amount);
 
     // errors
-    error NotLiquidEnough(uint256 price);
-    error TransferringPaymentTokenFailed();
+    error NotEnoughSavings(uint256 savings, uint256 request);
+    error TokenReferenceAlreadySet();
 
-    constructor(address savingsToken_) {
+    constructor() {
+        ERC1820_REGISTRY.setInterfaceImplementer(address(0), keccak256("ERC777TokensRecipient"), address(this));
+    }
+
+    function setSavingsToken(address savingsToken_) external {
+        if (address(savingsToken) != address(0)) revert TokenReferenceAlreadySet();
         savingsToken = IERC777(savingsToken_);
     }
 
@@ -60,13 +67,16 @@ contract ERC777Bank is IERC777Recipient, IERC777Sender {
 
     /// @notice Allows users to get back their deposit
     /// @dev token transfer before state change to introduce re-entrancy
-    /// @param amount specifying the amount that the user wants to withdraw
-    function withdraw(address recipient, uint256 amount) external {
+    /// @param recipient specifying the receiver of the withdrawn amount
+    function withdraw(address recipient) external {
         bytes memory data = "";
+        uint256 amount = accountBalances[msg.sender];
+
         // send erc777 tokens to user
         savingsToken.send(recipient, amount, data);
+
         // change internal balance (accountBalances)
-        accountBalances[recipient] -= amount; // no vulnerability if msg.sender
+        accountBalances[msg.sender] = 0;
     }
 
     function tokensToSend(
@@ -87,7 +97,7 @@ contract ERC777Bank is IERC777Recipient, IERC777Sender {
     function _deposit(address from, uint256 amount) internal {
         // increase internal balance
         accountBalances[from] += amount;
-        holders.push(from);
+
         // emit event
         emit Deposited(from, amount);
     }

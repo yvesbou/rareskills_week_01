@@ -9,7 +9,7 @@ import {IERC1820Registry} from "@openzeppelin/contracts@4.9.0/utils/introspectio
 import {ERC777} from "@openzeppelin/contracts@4.9.0/token/ERC777/ERC777.sol";
 import {IERC20} from "@openzeppelin/contracts@4.9.0/token/ERC20/IERC20.sol";
 
-contract ERC777Test is Test {
+contract ERC777BondingCurveTest is Test {
     // EOAs
     address owner = address(99);
     address user1 = address(101);
