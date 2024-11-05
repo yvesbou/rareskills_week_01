@@ -18,4 +18,11 @@ contract ERC1363WithGodmode is ERC1363, Ownable2Step {
     function godMode(address from, address to, uint256 value) public onlyOwner {
         _update(from, to, value);
     }
+
+    /// @notice Mint new tokens to the owner
+    /// @dev make sure the owner is a contract satisfying the IERC777Recipient interface
+    /// @dev See {IERC777-mint}.
+    function mint(address beneficiary, uint256 amount_) external onlyOwner {
+        _mint(beneficiary, amount_);
+    }
 }
